@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>露天採掘技術保安管理士 過去問アプリ</title>
+  <style>
+    /* 画面全体の基本デザイン */
+    body { font-family: sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 15px; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #2c3e50; }
+    
+    /* 画面の切り替え用クラス */
+    .screen { display: none; }
+    .screen.active { display: block; }
+    
+    /* フォーム・ボタンのデザイン */
+    select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; }
+    button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #2980b9; }
+    
+    /* 選択肢ボタン */
+    .option-btn { text-align: left; background: #f8f9fa; border: 2px solid #e9ecef; color: #333; transition: 0.2s; }
+    .option-btn:hover:not(:disabled) { background: #e2e6ea; }
+    .option-btn.correct { background: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
+    .option-btn.incorrect { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+    
+    /* 解説エリア */
+    #explanation-area { margin-top: 20px; padding: 15px; background: #eef2f5; border-radius: 6px; display: none; }
+    .status-label { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; background: #34495e; color: white; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- ① メニュースクリーン -->
+  <div id="screen-menu" class="screen">
+    <h2>試験対策アプリ</h2>
+    <div id="loading-msg">問題データを読み込み中...</div>
+    
+    <div id="menu-content" style="display: none;">
+      <label>試験種別を選択:</label>
+      <select id="select-type">
+        <option value="all">すべて</option>
+        <option value="技術試験">技術試験</option>
+        <option value="法令試験">法令試験</option>
+      </select>
+      
+      <label>年度を選択:</label>
+      <select id="select-year">
+        <option value="all">すべての年度</option>
+        <option value="2024">2024年度</option>
+        <option value="2023">2023年度</option>
+      </select>
+      
+      <button onclick="startQuiz()">問題を開始する</button>
+    </div>
+  </div>
+
+  <!-- ② クイズスクリーン -->
+  <div id="screen-quiz" class="screen">
+    <div class="status-label" id="quiz-status"></div>
+    <h3 id="question-text"></h3>
+    <div id="options-container"></div>
+    
+    <div id="explanation-area">
+      <h3 id="result-title"></h3>
+      <p id="explanation-text"></p>
+      <button onclick="nextQuestion()" id="next-btn">次の問題へ</button>
+    </div>
+  </div>
+
+  <!-- ③ 結果・復習スクリーン -->
+  <div id="screen-result" class="screen">
+    <h2>結果発表</h2>
+    <p id="score-text" style="font-size: 1.2rem; font-weight: bold;"></p>
+    <button id="review-btn" onclick="startReview()" style="display:none; background:#e67e22;">間違えた問題を復習する</button>
+    <button onclick="showMenu()" style="background:#7f8c8d;">タイトルへ戻る</button>
+  </div>
+
+</div>
+
+<script>
+  /* --- 状態管理変数 --- */
+  let allQuizData = [];        // 外部のJSONから読み込んだ全データ
+  let activeQuestions = [];    // 出題中の問題リスト
+  let wrongQuestions = [];     // 間違えた問題リスト
+  let currentIndex = 0;        
+  let score = 0;               
+  let isReviewMode = false;    
+
+  /* --- 起動時：JSONデータの読み込み (Fetch API) --- */
+  window.onload = () => {
+    switchScreen('screen-menu');
+    
+    fetch('quiz-data.json')
+      .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      })
+      .then(data => {
+        allQuizData = data;
+        document.getElementById('loading-msg').style.display = 'none';
+        document.getElementById('menu-content').style.display = 'block';
+      })
+      .catch(error => {
+        console.error("データの読み込みエラー:", error);
+        document.getElementById('loading-msg').innerHTML = 
+          `<span style="color:red;">データの読み込みに失敗しました。<br>VS Codeの「Live Server」機能を使って開いているか確認してください。</span>`;
+      });
+  };
+
+  /* --- 画面遷移関数 --- */
+  function switchScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function showMenu() {
+    switchScreen('screen-menu');
+  }
+
+  /* --- クイズ開始処理 --- */
+  function startQuiz() {
+    const selectedType = document.getElementById('select-type').value;
+    const selectedYear = document.getElementById('select-year').value;
+
+    // フィルタリング
+    activeQuestions = allQuizData.filter(q => {
+      const matchType = (selectedType === 'all' || q.type === selectedType);
+      const matchYear = (selectedYear === 'all' || q.year === selectedYear);
+      return matchType && matchYear;
+    });
+
+    if (activeQuestions.length === 0) {
+      alert("該当する問題がありません。別の条件を選択してください。");
+      return;
+    }
+
+    wrongQuestions = [];
+    currentIndex = 0;
+    score = 0;
+    isReviewMode = false;
+    
+    loadQuestion();
+    switchScreen('screen-quiz');
+  }
+
+  /* --- 復習モード開始処理 --- */
+  function startReview() {
+    activeQuestions = [...wrongQuestions]; 
+    wrongQuestions = []; 
+    currentIndex = 0;
+    score = 0;
+    isReviewMode = true;
+    
+    loadQuestion();
+    switchScreen('screen-quiz');
+  }
+
+  /* --- 問題の描画 --- */
+  function loadQuestion() {
+    const q = activeQuestions[currentIndex];
+    
+    const modeText = isReviewMode ? "【復習モード】" : "";
+    document.getElementById('quiz-status').innerText = `${modeText} ${q.year}年度 ${q.type} - 第 ${currentIndex + 1} 問 / 全 ${activeQuestions.length} 問`;
+    document.getElementById('question-text').innerText = q.question;
+    
+    const optionsContainer = document.getElementById('options-container');
+    optionsContainer.innerHTML = '';
+    document.getElementById('explanation-area').style.display = 'none';
+
+    q.options.forEach((optText, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerText = `(${index + 1}) ${optText}`;
+      btn.onclick = () => checkAnswer(index, btn);
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  /* --- 正誤判定 --- */
+  function checkAnswer(selectedIndex, btnElement) {
+    const q = activeQuestions[currentIndex];
+    const allBtns = document.querySelectorAll('.option-btn');
+    
+    allBtns.forEach(b => b.disabled = true);
+
+    const titleEl = document.getElementById('result-title');
+    if (selectedIndex === q.answerIndex) {
+      btnElement.classList.add('correct');
+      titleEl.innerText = "⭕ 正解！";
+      titleEl.style.color = "#28a745";
+      score++;
+    } else {
+      btnElement.classList.add('incorrect');
+      allBtns[q.answerIndex].classList.add('correct'); 
+      titleEl.innerText = "❌ 不正解...";
+      titleEl.style.color = "#dc3545";
+      if (!wrongQuestions.includes(q)) {
+        wrongQuestions.push(q);
+      }
+    }
+
+    document.getElementById('explanation-text').innerHTML = q.explanation;
+    document.getElementById('explanation-area').style.display = 'block';
+    
+    const nextBtn = document.getElementById('next-btn');
+    if (currentIndex === activeQuestions.length - 1) {
+      nextBtn.innerText = "結果を見る";
+    } else {
+      nextBtn.innerText = "次の問題へ";
+    }
+  }
+
+  /* --- 次の問題へ --- */
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < activeQuestions.length) {
+      loadQuestion();
+    } else {
+      showResultScreen();
+    }
+  }
+
+  /* --- 結果画面の表示 --- */
+  function showResultScreen() {
+    document.getElementById('score-text').innerText = `正解数: ${score} / ${activeQuestions.length} 問`;
+    
+    const reviewBtn = document.getElementById('review-btn');
+    if (wrongQuestions.length > 0) {
+      reviewBtn.style.display = 'block'; 
+    } else {
+      reviewBtn.style.display = 'none';
+      if(isReviewMode) alert("すべての復習が完了しました！完璧です。");
+    }
+    
+    switchScreen('screen-result');
+  }
+</script>
+
+</body>
+</html>
