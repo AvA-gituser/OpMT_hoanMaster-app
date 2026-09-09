@@ -3,31 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>露天採掘技術保安管理士 過去問アプリ</title>
+  <title>露天採掘技術保安管理士 試験対策アプリ</title>
+  
+  <!-- MathJaxの設定と読み込み（数式を綺麗に表示するため） -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
   <style>
     /* 画面全体の基本デザイン */
-    body { font-family: sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 15px; }
-    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #f0f4f8; color: #333; margin: 0; padding: 15px; line-height: 1.6;}
+    .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     h1, h2, h3 { color: #2c3e50; }
+    h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
     
     /* 画面の切り替え用クラス */
     .screen { display: none; }
-    .screen.active { display: block; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     
     /* フォーム・ボタンのデザイン */
-    select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; }
-    button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #2980b9; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+    select, button { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #ccd1d9; font-size: 1rem; box-sizing: border-box; }
+    select { background-color: #f9fbfd; cursor: pointer; }
+    
+    /* メインボタン */
+    .btn-primary { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+    .btn-primary:hover { background: #2980b9; }
+    .btn-secondary { background: #95a5a6; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+    .btn-secondary:hover { background: #7f8c8d; }
+    .btn-warning { background: #e67e22; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+    .btn-warning:hover { background: #d35400; }
     
     /* 選択肢ボタン */
-    .option-btn { text-align: left; background: #f8f9fa; border: 2px solid #e9ecef; color: #333; transition: 0.2s; }
-    .option-btn:hover:not(:disabled) { background: #e2e6ea; }
+    .option-btn { text-align: left; background: #f8f9fa; border: 2px solid #e9ecef; color: #333; margin-bottom: 10px; transition: 0.2s; }
+    .option-btn:hover:not(:disabled) { background: #e2e6ea; border-color: #cbd3da; }
     .option-btn.correct { background: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
     .option-btn.incorrect { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
     
     /* 解説エリア */
-    #explanation-area { margin-top: 20px; padding: 15px; background: #eef2f5; border-radius: 6px; display: none; }
-    .status-label { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; background: #34495e; color: white; margin-bottom: 10px; }
+    #explanation-area { margin-top: 25px; padding: 20px; background: #eef2f5; border-radius: 8px; border-left: 5px solid #3498db; display: none; }
+    #result-title { margin-top: 0; font-size: 1.3rem; }
+    
+    /* ステータスラベル */
+    .status-label { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; background: #2c3e50; color: white; margin-bottom: 15px; font-weight: bold; }
+    .review-badge { background: #e74c3c; margin-right: 10px; }
   </style>
 </head>
 <body>
@@ -35,81 +62,70 @@
 <div class="container">
   
   <!-- ① メニュースクリーン -->
-  <div id="screen-menu" class="screen">
-    <h2>試験対策アプリ</h2>
-    <div id="loading-msg">問題データを読み込み中...</div>
+  <div id="screen-menu" class="screen active">
+    <h2>露天採掘技術保安管理士 過去問</h2>
     
-    <div id="menu-content" style="display: none;">
-      <label>試験種別を選択:</label>
-      <select id="select-type">
-        <option value="all">すべて</option>
-        <option value="技術試験">技術試験</option>
-        <option value="法令試験">法令試験</option>
-      </select>
-      
-      <label>年度を選択:</label>
+    <div class="form-group">
+      <label for="select-year">出題年度</label>
       <select id="select-year">
-        <option value="all">すべての年度</option>
+        <option value="2025">2025年度</option>
         <option value="2024">2024年度</option>
         <option value="2023">2023年度</option>
+        <option value="2022">2022年度</option>
+        <option value="2021">2021年度</option>
       </select>
-      
-      <button onclick="startQuiz()">問題を開始する</button>
     </div>
+    
+    <div class="form-group">
+      <label for="select-type">試験科目</label>
+      <select id="select-type">
+        <option value="law">法令試験</option>
+        <option value="tec">露天採掘技術試験</option>
+      </select>
+    </div>
+    
+    <button class="btn-primary" onclick="startQuiz()">問題を取得して開始</button>
+    <div id="error-msg" style="color: #e74c3c; margin-top: 15px; font-weight: bold; text-align: center; display: none;"></div>
   </div>
 
   <!-- ② クイズスクリーン -->
   <div id="screen-quiz" class="screen">
-    <div class="status-label" id="quiz-status"></div>
-    <h3 id="question-text"></h3>
+    <div>
+      <span class="status-label review-badge" id="review-badge" style="display: none;">復習モード</span>
+      <span class="status-label" id="quiz-status"></span>
+    </div>
+    
+    <h3 id="question-text" style="margin-top: 0;"></h3>
     <div id="options-container"></div>
     
     <div id="explanation-area">
       <h3 id="result-title"></h3>
-      <p id="explanation-text"></p>
-      <button onclick="nextQuestion()" id="next-btn">次の問題へ</button>
+      <div id="explanation-text"></div>
+      <button class="btn-primary" onclick="nextQuestion()" id="next-btn" style="margin-top: 20px;">次の問題へ</button>
     </div>
   </div>
 
   <!-- ③ 結果・復習スクリーン -->
   <div id="screen-result" class="screen">
-    <h2>結果発表</h2>
-    <p id="score-text" style="font-size: 1.2rem; font-weight: bold;"></p>
-    <button id="review-btn" onclick="startReview()" style="display:none; background:#e67e22;">間違えた問題を復習する</button>
-    <button onclick="showMenu()" style="background:#7f8c8d;">タイトルへ戻る</button>
+    <h2>学習結果</h2>
+    <div style="text-align: center; padding: 30px 0;">
+      <div style="font-size: 1.2rem; color: #7f8c8d;">正解数</div>
+      <div id="score-text" style="font-size: 3rem; font-weight: bold; color: #2c3e50; margin: 10px 0;"></div>
+    </div>
+    
+    <button id="review-btn" class="btn-warning" onclick="startReview()" style="display:none;">間違えた問題を復習する</button>
+    <button class="btn-secondary" onclick="showMenu()">タイトルへ戻る</button>
   </div>
 
 </div>
 
 <script>
   /* --- 状態管理変数 --- */
-  let allQuizData = [];        // 外部のJSONから読み込んだ全データ
-  let activeQuestions = [];    // 出題中の問題リスト
-  let wrongQuestions = [];     // 間違えた問題リスト
+  let activeQuestions = [];    // 現在出題中の問題リスト
+  let wrongQuestions = [];     // 間違えた問題のリスト
   let currentIndex = 0;        
   let score = 0;               
   let isReviewMode = false;    
-
-  /* --- 起動時：JSONデータの読み込み (Fetch API) --- */
-  window.onload = () => {
-    switchScreen('screen-menu');
-    
-    fetch('quiz-data.json')
-      .then(response => {
-        if (!response.ok) throw new Error("Network response was not ok");
-        return response.json();
-      })
-      .then(data => {
-        allQuizData = data;
-        document.getElementById('loading-msg').style.display = 'none';
-        document.getElementById('menu-content').style.display = 'block';
-      })
-      .catch(error => {
-        console.error("データの読み込みエラー:", error);
-        document.getElementById('loading-msg').innerHTML = 
-          `<span style="color:red;">データの読み込みに失敗しました。<br>VS Codeの「Live Server」機能を使って開いているか確認してください。</span>`;
-      });
-  };
 
   /* --- 画面遷移関数 --- */
   function switchScreen(screenId) {
@@ -118,39 +134,54 @@
   }
 
   function showMenu() {
+    document.getElementById('error-msg').style.display = 'none';
     switchScreen('screen-menu');
   }
 
-  /* --- クイズ開始処理 --- */
+  /* --- クイズ開始処理（外部JSONファイルの動的読み込み） --- */
   function startQuiz() {
-    const selectedType = document.getElementById('select-type').value;
     const selectedYear = document.getElementById('select-year').value;
+    const selectedType = document.getElementById('select-type').value;
+    const typeName = selectedType === "law" ? "法令試験" : "技術試験";
 
-    // フィルタリング
-    activeQuestions = allQuizData.filter(q => {
-      const matchType = (selectedType === 'all' || q.type === selectedType);
-      const matchYear = (selectedYear === 'all' || q.year === selectedYear);
-      return matchType && matchYear;
-    });
+    // ファイル名の構築（例: "2024_law.json"）
+    const fileName = `${selectedYear}_${selectedType}.json`;
+    const errorMsgEl = document.getElementById('error-msg');
+    errorMsgEl.style.display = 'none';
 
-    if (activeQuestions.length === 0) {
-      alert("該当する問題がありません。別の条件を選択してください。");
-      return;
-    }
+    // JSONデータの取得
+    fetch(fileName)
+      .then(response => {
+        if (!response.ok) throw new Error("File not found");
+        return response.json();
+      })
+      .then(data => {
+        activeQuestions = data;
+        wrongQuestions = [];
+        currentIndex = 0;
+        score = 0;
+        isReviewMode = false;
+        
+        // UIのテキスト設定用に情報を付与
+        activeQuestions.forEach(q => {
+            q.displayYear = selectedYear;
+            q.displayType = typeName;
+        });
 
-    wrongQuestions = [];
-    currentIndex = 0;
-    score = 0;
-    isReviewMode = false;
-    
-    loadQuestion();
-    switchScreen('screen-quiz');
+        loadQuestion();
+        switchScreen('screen-quiz');
+      })
+      .catch(error => {
+        console.error(error);
+        errorMsgEl.innerHTML = `⚠️ ${selectedYear}年度の${typeName}データが見つかりません。<br>（${fileName} を作成してアップロードしてください）`;
+        errorMsgEl.style.display = 'block';
+      });
   }
 
   /* --- 復習モード開始処理 --- */
   function startReview() {
     activeQuestions = [...wrongQuestions]; 
-    wrongQuestions = []; 
+    wrongQuestions = []; // 再度間違えた場合のためにリセット
     currentIndex = 0;
     score = 0;
     isReviewMode = true;
@@ -163,10 +194,14 @@
   function loadQuestion() {
     const q = activeQuestions[currentIndex];
     
-    const modeText = isReviewMode ? "【復習モード】" : "";
-    document.getElementById('quiz-status').innerText = `${modeText} ${q.year}年度 ${q.type} - 第 ${currentIndex + 1} 問 / 全 ${activeQuestions.length} 問`;
-    document.getElementById('question-text').innerText = q.question;
+    // ステータス表示
+    document.getElementById('review-badge').style.display = isReviewMode ? "inline-block" : "none";
+    document.getElementById('quiz-status').innerText = `${q.displayYear}年度 ${q.displayType} - 第 ${currentIndex + 1} 問 / 全 ${activeQuestions.length} 問`;
     
+    // 問題文のセット (innerHTMLを使うことで改行タグ等にも対応)
+    document.getElementById('question-text').innerHTML = q.question;
+    
+    // 選択肢の生成
     const optionsContainer = document.getElementById('options-container');
     optionsContainer.innerHTML = '';
     document.getElementById('explanation-area').style.display = 'none';
@@ -174,10 +209,15 @@
     q.options.forEach((optText, index) => {
       const btn = document.createElement('button');
       btn.className = 'option-btn';
-      btn.innerText = `(${index + 1}) ${optText}`;
+      btn.innerHTML = `(${index + 1}) ${optText}`;
       btn.onclick = () => checkAnswer(index, btn);
       optionsContainer.appendChild(btn);
     });
+
+    // MathJaxによる数式レンダリング（問題文・選択肢）
+    if (window.MathJax) {
+      MathJax.typesetPromise();
+    }
   }
 
   /* --- 正誤判定 --- */
@@ -185,6 +225,7 @@
     const q = activeQuestions[currentIndex];
     const allBtns = document.querySelectorAll('.option-btn');
     
+    // 複数回解答できないようにボタンをロック
     allBtns.forEach(b => b.disabled = true);
 
     const titleEl = document.getElementById('result-title');
@@ -195,22 +236,30 @@
       score++;
     } else {
       btnElement.classList.add('incorrect');
-      allBtns[q.answerIndex].classList.add('correct'); 
+      allBtns[q.answerIndex].classList.add('correct'); // 正解を緑色で明示
       titleEl.innerText = "❌ 不正解...";
       titleEl.style.color = "#dc3545";
+      // 間違えた問題を記録（重複防止）
       if (!wrongQuestions.includes(q)) {
         wrongQuestions.push(q);
       }
     }
 
+    // 解説の表示
     document.getElementById('explanation-text').innerHTML = q.explanation;
     document.getElementById('explanation-area').style.display = 'block';
     
+    // 最後の問題ならボタンのテキストを変更
     const nextBtn = document.getElementById('next-btn');
     if (currentIndex === activeQuestions.length - 1) {
       nextBtn.innerText = "結果を見る";
     } else {
       nextBtn.innerText = "次の問題へ";
+    }
+
+    // MathJaxによる数式レンダリング（解説文）
+    if (window.MathJax) {
+      MathJax.typesetPromise();
     }
   }
 
@@ -219,6 +268,7 @@
     currentIndex++;
     if (currentIndex < activeQuestions.length) {
       loadQuestion();
+      window.scrollTo(0, 0); // 画面上部へスクロール
     } else {
       showResultScreen();
     }
@@ -226,17 +276,21 @@
 
   /* --- 結果画面の表示 --- */
   function showResultScreen() {
-    document.getElementById('score-text').innerText = `正解数: ${score} / ${activeQuestions.length} 問`;
+    document.getElementById('score-text').innerText = `${score} / ${activeQuestions.length}`;
     
     const reviewBtn = document.getElementById('review-btn');
     if (wrongQuestions.length > 0) {
       reviewBtn.style.display = 'block'; 
     } else {
       reviewBtn.style.display = 'none';
-      if(isReviewMode) alert("すべての復習が完了しました！完璧です。");
+      if(isReviewMode) {
+          // 復習モードですべて正解した場合
+          document.getElementById('score-text').innerHTML += `<br><span style="font-size:1.2rem; color:#27ae60;">✨ 完璧です！弱点を克服しました ✨</span>`;
+      }
     }
     
     switchScreen('screen-result');
+    window.scrollTo(0, 0);
   }
 </script>
 
