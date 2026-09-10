@@ -5,36 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>露天採掘技術保安管理士 試験対策アプリ</title>
   
-  <!-- MathJaxの設定と読み込み（数式を綺麗に表示するため） -->
   <script>
     window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$']],
-        displayMath: [['$$', '$$']]
-      }
+      tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] }
     };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
-    /* 画面全体の基本デザイン */
-    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #f0f4f8; color: #333; margin: 0; padding: 15px; line-height: 1.6;}
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f8; color: #333; margin: 0; padding: 15px; line-height: 1.6;}
     .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     h1, h2, h3 { color: #2c3e50; }
     h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
     
-    /* 画面の切り替え用クラス */
     .screen { display: none; }
     .screen.active { display: block; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     
-    /* フォーム・ボタンのデザイン */
     .form-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
     select, button { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #ccd1d9; font-size: 1rem; box-sizing: border-box; }
     select { background-color: #f9fbfd; cursor: pointer; }
     
-    /* メインボタン */
+    /* トグルスイッチ（ランダムON/OFF）のデザイン */
+    .toggle-group { display: flex; align-items: center; margin-top: 20px; margin-bottom: 20px; padding: 10px 15px; background: #eef2f5; border-radius: 8px; }
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #bdc3c7; transition: .3s; border-radius: 26px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #3498db; }
+    input:checked + .slider:before { transform: translateX(24px); }
+    .toggle-label { margin-left: 15px; font-weight: bold; color: #2c3e50; font-size: 0.95rem; }
+
     .btn-primary { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
     .btn-primary:hover { background: #2980b9; }
     .btn-secondary { background: #95a5a6; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
@@ -42,19 +44,20 @@
     .btn-warning { background: #e67e22; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
     .btn-warning:hover { background: #d35400; }
     
-    /* 選択肢ボタン */
     .option-btn { text-align: left; background: #f8f9fa; border: 2px solid #e9ecef; color: #333; margin-bottom: 10px; transition: 0.2s; }
     .option-btn:hover:not(:disabled) { background: #e2e6ea; border-color: #cbd3da; }
     .option-btn.correct { background: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
     .option-btn.incorrect { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+    .option-btn:disabled { cursor: default; }
     
-    /* 解説エリア */
-    #explanation-area { margin-top: 25px; padding: 20px; background: #eef2f5; border-radius: 8px; border-left: 5px solid #3498db; display: none; }
+    #explanation-area { margin-top: 25px; padding: 20px; background: #eef2f5; border-radius: 8px; border-left: 5px solid #3498db; }
     #result-title { margin-top: 0; font-size: 1.3rem; }
     
-    /* ステータスラベル */
     .status-label { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; background: #2c3e50; color: white; margin-bottom: 15px; font-weight: bold; }
     .review-badge { background: #e74c3c; margin-right: 10px; }
+
+    /* ナビゲーションボタン（前へ・次へ）のレイアウト */
+    .nav-buttons { display: flex; justify-content: space-between; gap: 15px; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -83,15 +86,16 @@
         <option value="tec">露天採掘技術試験</option>
       </select>
     </div>
-
-    <!-- ランダム出題のオンオフ機能 -->
-    <div class="form-group" style="margin-top: 20px; padding: 10px; background: #f9fbfd; border-radius: 8px; border: 1px solid #ccd1d9;">
-      <label style="cursor: pointer; display: flex; align-items: center; color: #34495e; margin: 0;">
-        <input type="checkbox" id="random-check" style="width: 20px; height: 20px; margin: 0 10px 0 0; cursor: pointer;">
-        問題をランダムな順序で出題する
-      </label>
-    </div>
     
+    <!-- ランダム化 ON/OFF スイッチ -->
+    <div class="toggle-group">
+      <label class="switch">
+        <input type="checkbox" id="toggle-random" checked>
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">選択肢の並び順をランダムにする</span>
+    </div>
+
     <button class="btn-primary" onclick="startQuiz()">問題を取得して開始</button>
     <div id="error-msg" style="color: #e74c3c; margin-top: 15px; font-weight: bold; text-align: center; display: none;"></div>
   </div>
@@ -106,10 +110,15 @@
     <h3 id="question-text" style="margin-top: 0;"></h3>
     <div id="options-container"></div>
     
-    <div id="explanation-area">
+    <div id="explanation-area" style="display: none;">
       <h3 id="result-title"></h3>
       <div id="explanation-text"></div>
-      <button class="btn-primary" onclick="nextQuestion()" id="next-btn" style="margin-top: 20px;">次の問題へ</button>
+    </div>
+
+    <!-- 戻る・進むナビゲーション -->
+    <div class="nav-buttons">
+      <button class="btn-secondary" onclick="prevQuestion()" id="prev-btn" style="display: none;">← 前の問題へ</button>
+      <button class="btn-primary" onclick="nextQuestion()" id="next-btn" style="display: none;">次の問題へ →</button>
     </div>
   </div>
 
@@ -128,22 +137,11 @@
 </div>
 
 <script>
-  /* --- 状態管理変数 --- */
   let activeQuestions = [];    
   let wrongQuestions = [];     
   let currentIndex = 0;        
-  let score = 0;               
   let isReviewMode = false;    
 
-  /* --- 配列シャッフル関数 (フィッシャー・イェーツのアルゴリズム) --- */
-  function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-  }
-
-  /* --- 画面遷移関数 --- */
   function switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
@@ -154,12 +152,50 @@
     switchScreen('screen-menu');
   }
 
-  /* --- クイズ開始処理（外部JSONファイルの動的読み込み） --- */
+  /* --- 取得したデータをシャッフル・状態保持用に加工する関数 --- */
+  function prepareQuestions(dataList, year, type) {
+    // トグルスイッチの状態を取得
+    const isRandom = document.getElementById('toggle-random').checked;
+
+    return dataList.map(q => {
+      // 選択肢をオブジェクト化し、元の番号(originalIndex)と正解フラグを持たせる
+      let opts = q.options.map((text, idx) => {
+        return {
+          text: text,
+          isCorrect: (idx === q.answerIndex),
+          originalIndex: idx
+        };
+      });
+      
+      // isRandom が true の場合のみシャッフル処理を実行
+      if (isRandom) {
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+      }
+      
+      // シャッフル後の正解ボタンが何番目にあるかを再取得
+      let newAnsIdx = opts.findIndex(o => o.isCorrect);
+
+      // 回答状態を保持するためのプロパティを追加して返す
+      return {
+        ...q,                 // JSONの元データ
+        displayYear: year || q.displayYear,
+        displayType: type || q.displayType,
+        optionsObj: opts,     // シャッフル済み（またはそのまま）の選択肢
+        newAnswerIndex: newAnsIdx,
+        isAnswered: false,    // 既に答えたか
+        userSelectedIndex: null, // ユーザーが選んだボタンの番号
+        isUserCorrect: false  // 正解だったか
+      };
+    });
+  }
+
   function startQuiz() {
     const selectedYear = document.getElementById('select-year').value;
     const selectedType = document.getElementById('select-type').value;
     const typeName = selectedType === "law" ? "法令試験" : "技術試験";
-
     const fileName = `${selectedYear}_${selectedType}.json`;
     const errorMsgEl = document.getElementById('error-msg');
     errorMsgEl.style.display = 'none';
@@ -170,47 +206,27 @@
         return response.json();
       })
       .then(data => {
-        activeQuestions = data;
-        
-        // ランダム出題の判定と実行
-        const isRandom = document.getElementById('random-check').checked;
-        if (isRandom) {
-          shuffleArray(activeQuestions);
-        }
-
+        // データ加工関数を通して、状態管理用の配列を生成
+        activeQuestions = prepareQuestions(data, selectedYear, typeName);
         wrongQuestions = [];
         currentIndex = 0;
-        score = 0;
         isReviewMode = false;
         
-        activeQuestions.forEach(q => {
-            q.displayYear = selectedYear;
-            q.displayType = typeName;
-        });
-
         loadQuestion();
         switchScreen('screen-quiz');
       })
       .catch(error => {
         console.error(error);
-        errorMsgEl.innerHTML = `⚠️ ${selectedYear}年度の${typeName}データが見つかりません。<br>（${fileName} が正しいか確認してください）`;
+        errorMsgEl.innerHTML = `⚠️ ${selectedYear}年度の${typeName}データが見つかりません。`;
         errorMsgEl.style.display = 'block';
       });
   }
 
-  /* --- 復習モード開始処理 --- */
   function startReview() {
-    activeQuestions = [...wrongQuestions]; 
-    
-    // 復習モードでもランダムのチェックが入っていればシャッフルする
-    const isRandom = document.getElementById('random-check').checked;
-    if (isRandom) {
-      shuffleArray(activeQuestions);
-    }
-
+    // 復習モード時も、メニュースクリーンのトグル状態に従って再生成する
+    activeQuestions = prepareQuestions(wrongQuestions, "", ""); 
     wrongQuestions = []; 
     currentIndex = 0;
-    score = 0;
     isReviewMode = true;
     
     loadQuestion();
@@ -223,24 +239,51 @@
     
     document.getElementById('review-badge').style.display = isReviewMode ? "inline-block" : "none";
     document.getElementById('quiz-status').innerText = `${q.displayYear}年度 ${q.displayType} - 第 ${currentIndex + 1} 問 / 全 ${activeQuestions.length} 問`;
-    
     document.getElementById('question-text').innerHTML = q.question;
     
     const optionsContainer = document.getElementById('options-container');
     optionsContainer.innerHTML = '';
-    document.getElementById('explanation-area').style.display = 'none';
+    
+    const explanationArea = document.getElementById('explanation-area');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    // 【前へボタン】の表示（最初の問題以外で表示）
+    prevBtn.style.display = (currentIndex > 0) ? "block" : "none";
 
-    q.options.forEach((optText, index) => {
+    q.optionsObj.forEach((opt, index) => {
       const btn = document.createElement('button');
       btn.className = 'option-btn';
-      btn.innerHTML = `(${index + 1}) ${optText}`;
-      btn.onclick = () => checkAnswer(index, btn);
+      // シャッフルしても解説とズレないよう、元の番号(originalIndex + 1)を常に表示する
+      btn.innerHTML = `(${opt.originalIndex + 1}) ${opt.text}`;
+      
+      // 過去に回答済みの問題に戻ってきた場合の復元処理
+      if (q.isAnswered) {
+        btn.disabled = true; // 選び直しを防止
+        if (index === q.newAnswerIndex) {
+          btn.classList.add('correct'); // 正解の選択肢
+        } else if (index === q.userSelectedIndex) {
+          btn.classList.add('incorrect'); // ユーザーが間違えて選んだ選択肢
+        }
+      } else {
+        // 未回答の場合のみクリック可能
+        btn.onclick = () => checkAnswer(index, btn);
+      }
       optionsContainer.appendChild(btn);
     });
 
-    if (window.MathJax) {
-      MathJax.typesetPromise();
+    // 回答済みであれば解説と【次へボタン】を表示
+    if (q.isAnswered) {
+      showExplanation(q);
+      explanationArea.style.display = 'block';
+      nextBtn.style.display = "block";
+      nextBtn.innerText = (currentIndex === activeQuestions.length - 1) ? "結果を見る" : "次の問題へ →";
+    } else {
+      explanationArea.style.display = 'none';
+      nextBtn.style.display = "none"; // 未回答時は進めない
     }
+
+    if (window.MathJax) MathJax.typesetPromise();
   }
 
   /* --- 正誤判定 --- */
@@ -248,45 +291,69 @@
     const q = activeQuestions[currentIndex];
     const allBtns = document.querySelectorAll('.option-btn');
     
-    allBtns.forEach(b => b.disabled = true);
+    allBtns.forEach(b => b.disabled = true); // ロック
+    
+    // 回答結果を記録（戻ってきた時のため）
+    q.isAnswered = true;
+    q.userSelectedIndex = selectedIndex;
+    q.isUserCorrect = (selectedIndex === q.newAnswerIndex);
 
-    const titleEl = document.getElementById('result-title');
-    if (selectedIndex === q.answerIndex) {
+    if (q.isUserCorrect) {
       btnElement.classList.add('correct');
-      titleEl.innerText = "⭕ 正解！";
-      titleEl.style.color = "#28a745";
-      score++;
     } else {
       btnElement.classList.add('incorrect');
-      allBtns[q.answerIndex].classList.add('correct'); 
-      titleEl.innerText = "❌ 不正解...";
-      titleEl.style.color = "#dc3545";
-      if (!wrongQuestions.includes(q)) {
-        wrongQuestions.push(q);
+      allBtns[q.newAnswerIndex].classList.add('correct');
+      
+      // 間違えた問題を復習用リストに追加（元の生データを保存）
+      const originalQ = {
+        id: q.id, year: q.year, type: q.type, question: q.question,
+        options: q.options, answerIndex: q.answerIndex, explanation: q.explanation,
+        displayYear: q.displayYear, displayType: q.displayType
+      };
+      // 重複登録防止
+      if (!wrongQuestions.some(wq => wq.id === q.id)) {
+        wrongQuestions.push(originalQ);
       }
     }
 
-    document.getElementById('explanation-text').innerHTML = q.explanation;
+    showExplanation(q);
     document.getElementById('explanation-area').style.display = 'block';
     
     const nextBtn = document.getElementById('next-btn');
-    if (currentIndex === activeQuestions.length - 1) {
-      nextBtn.innerText = "結果を見る";
-    } else {
-      nextBtn.innerText = "次の問題へ";
-    }
+    nextBtn.style.display = "block";
+    nextBtn.innerText = (currentIndex === activeQuestions.length - 1) ? "結果を見る" : "次の問題へ →";
 
-    if (window.MathJax) {
-      MathJax.typesetPromise();
+    if (window.MathJax) MathJax.typesetPromise();
+  }
+
+  /* --- 解説表示用関数 --- */
+  function showExplanation(q) {
+    const titleEl = document.getElementById('result-title');
+    if (q.isUserCorrect) {
+      titleEl.innerText = "⭕ 正解！";
+      titleEl.style.color = "#28a745";
+    } else {
+      titleEl.innerText = "❌ 不正解...";
+      titleEl.style.color = "#dc3545";
+    }
+    document.getElementById('explanation-text').innerHTML = q.explanation;
+  }
+
+  /* --- 前の問題へ --- */
+  function prevQuestion() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      loadQuestion();
+      window.scrollTo(0, 0); // 画面の一番上へ
     }
   }
 
   /* --- 次の問題へ --- */
   function nextQuestion() {
-    currentIndex++;
-    if (currentIndex < activeQuestions.length) {
+    if (currentIndex < activeQuestions.length - 1) {
+      currentIndex++;
       loadQuestion();
-      window.scrollTo(0, 0); 
+      window.scrollTo(0, 0);
     } else {
       showResultScreen();
     }
@@ -294,7 +361,9 @@
 
   /* --- 結果画面の表示 --- */
   function showResultScreen() {
-    document.getElementById('score-text').innerText = `${score} / ${activeQuestions.length}`;
+    // 戻って見直してもスコアがおかしくならないよう、最終的な正解数を再計算
+    const finalScore = activeQuestions.filter(q => q.isUserCorrect).length;
+    document.getElementById('score-text').innerHTML = `${finalScore} <span style="font-size:1.5rem;">/ ${activeQuestions.length}</span>`;
     
     const reviewBtn = document.getElementById('review-btn');
     if (wrongQuestions.length > 0) {
@@ -305,7 +374,6 @@
           document.getElementById('score-text').innerHTML += `<br><span style="font-size:1.2rem; color:#27ae60;">✨ 完璧です！弱点を克服しました ✨</span>`;
       }
     }
-    
     switchScreen('screen-result');
     window.scrollTo(0, 0);
   }
